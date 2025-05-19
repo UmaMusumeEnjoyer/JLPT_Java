@@ -4,7 +4,7 @@ import java.sql.*;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hoàn thành nhận dạng văn bản tiếng Nhật từ ảnh.");
+        //System.out.println("Hoàn thành nhận dạng văn bản tiếng Nhật từ ảnh.");
         DbConnect db = new DbConnect();
         try {
             // Kết nối đến cơ sở dữ liệu
@@ -27,7 +27,6 @@ public class Main {
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
-
         }
 
 
