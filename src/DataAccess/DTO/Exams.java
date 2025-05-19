@@ -1,4 +1,4 @@
-package DAL.DTO;
+package DataAccess.DTO;
 
 import java.time.LocalDateTime;
 

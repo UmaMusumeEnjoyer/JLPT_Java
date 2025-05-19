@@ -1,4 +1,4 @@
-package DAL.DTO;
+package DataAccess.DTO;
 
 public class Questions {
     private int questionID;

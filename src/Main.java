@@ -1,34 +1,29 @@
-import DAL.DbConnect;
+import BussinessLogic.AnswersBLL;
+import BussinessLogic.ExamsBLL;
+import BussinessLogic.QuestionsBLL;
+import DataAccess.DAL.ExamsDAL;
+import DataAccess.DbConnect;
 
 import java.sql.*;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        //System.out.println("Hoàn thành nhận dạng văn bản tiếng Nhật từ ảnh.");
-        DbConnect db = new DbConnect();
+
+        QuestionsBLL questionsBLL = new QuestionsBLL();
+        ExamsBLL examsBLL = new ExamsBLL();
+        AnswersBLL answersBLL = new AnswersBLL();
         try {
-            // Kết nối đến cơ sở dữ liệu
-            Connection connection = db.getConnection();
-            System.out.println("Kết nối thành công!");
-
-            // Thực hiện truy vấn
-            String sql = "SELECT * FROM Exams";
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sql);
-
-            // Xử lý kết quả
-            while (resultSet.next()) {
-                System.out.println("Dữ liệu: " + resultSet.getString("Title"));
+            // Lấy danh sách câu hỏi
+            List<List<Object>> questions = answersBLL.getAnswers();
+            System.out.println("Danh sách câu hỏi:");
+            for (List<Object> question : questions) {
+                System.out.println(question);
             }
 
-            // Đóng kết nối
-            resultSet.close();
-            statement.close();
-            connection.close();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+
         }
-
-
     }
 }

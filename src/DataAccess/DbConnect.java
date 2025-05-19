@@ -1,4 +1,4 @@
-package DAL;
+package DataAccess;
 
 import java.sql.*;
 import java.util.ArrayList;
