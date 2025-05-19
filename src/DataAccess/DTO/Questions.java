@@ -7,6 +7,9 @@ public class Questions {
     private String level;
     private String soundURL;
 
+    public Questions() {
+    }
+
     public Questions(int questionID, String content, String type, String level, String soundURL) {
         this.questionID = questionID;
         this.content = content;

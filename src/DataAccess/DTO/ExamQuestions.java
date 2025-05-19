@@ -6,6 +6,8 @@ public class ExamQuestions {
     private int order;
     private float score;
 
+    public ExamQuestions() {
+    }
 
     public ExamQuestions(int examID, int questionID, int order, float score) {
         this.examID = examID;

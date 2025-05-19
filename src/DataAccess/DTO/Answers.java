@@ -6,6 +6,8 @@ public class Answers {
     private String content;
     private boolean isCorrect;
     private int order;
+    public Answers() {
+    }
 
     public Answers(int answersID, int questionID, String content, boolean isCorrect, int order) {
         this.answersID = answersID;
