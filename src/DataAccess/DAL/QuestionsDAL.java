@@ -25,6 +25,17 @@ public class QuestionsDAL {
         dbConnect.executeNonQuery(sql, wrapParams(params));
     }
 
+    // Cập nhật toàn bộ nội dung, loại, cấp độ của câu hỏi
+    public void updateQuestionFull(int questionID, String newContent, String newType, String newLevel) throws Exception {
+        String sql = "UPDATE Questions SET Content = ?, Type = ?, Level = ? WHERE QuestionID = ?";
+        ArrayList<Object> params = new ArrayList<>();
+        params.add(newContent);
+        params.add(newType);
+        params.add(newLevel);
+        params.add(questionID);
+        dbConnect.executeNonQuery(sql, wrapParams(params));
+    }
+
     // Xoá câu hỏi
     public void deleteQuestion(int questionID) throws Exception {
         String sql = "DELETE FROM Questions WHERE QuestionID = ?";

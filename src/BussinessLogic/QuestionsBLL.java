@@ -30,4 +30,9 @@ public class QuestionsBLL {
         return questionsDAL.getQuestionsWithAnswersByTypeAndLevel(type, level);
     }
 
+    // Cập nhật toàn bộ nội dung, loại, cấp độ của câu hỏi
+    public void updateQuestionFull(int questionID, String newContent, String newType, String newLevel) throws Exception {
+        questionsDAL.updateQuestionFull(questionID, newContent, newType, newLevel);
+    }
+
 }
