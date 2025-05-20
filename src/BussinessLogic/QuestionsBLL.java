@@ -35,4 +35,17 @@ public class QuestionsBLL {
         questionsDAL.updateQuestionFull(questionID, newContent, newType, newLevel);
     }
 
+    // Thêm mới câu hỏi (content, type, level) => trả về questionID
+    public int addQuestion(String content, String type, String level) throws Exception {
+        return questionsDAL.addQuestion(content, type, level);
+    }
+    // Thêm đáp án cho câu hỏi
+    public void addAnswer(String content, int questionId, boolean isCorrect) throws Exception {
+        questionsDAL.addAnswer(content, questionId, isCorrect);
+    }
+
+    // Thêm mới câu hỏi và đáp án trong 1 transaction
+    public void addQuestionWithAnswers(String content, String type, String level, List<String> answers, String suggestedLabel) throws Exception {
+        questionsDAL.addQuestionWithAnswers(content, type, level, answers, suggestedLabel);
+    }
 }

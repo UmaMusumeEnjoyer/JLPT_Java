@@ -165,38 +165,50 @@ public class ShitsumonKanri extends JFrame {
                 Questions oldQ = selected.getQuestion();
                 JPanel panel = new JPanel(new GridLayout(0, 1));
                 JTextField contentField = new JTextField(oldQ.getContent());
-                JComboBox<String> typeBox = new JComboBox<>(new String[]{"Grammar", "Vocabulary"});
+                JComboBox<String> typeBox = new JComboBox<>(new String[]{"文法", "語彙"});
                 JComboBox<String> levelBox = new JComboBox<>(new String[]{"N1", "N2", "N3", "N4", "N5"});
-                typeBox.setSelectedItem(oldQ.getType() != null ? oldQ.getType() : "Grammar");
+                // Map DB value sang tiếng Nhật cho combobox
+                String typeJp = "文法";
+                if ("Vocabulary".equals(oldQ.getType())) typeJp = "語彙";
+                typeBox.setSelectedItem(typeJp);
                 levelBox.setSelectedItem(oldQ.getLevel() != null ? oldQ.getLevel() : "N5");
-                panel.add(new JLabel("Nội dung câu hỏi:"));
+                panel.add(new JLabel("質問内容:"));
                 panel.add(contentField);
-                panel.add(new JLabel("Thể loại:"));
+                panel.add(new JLabel("種類:"));
                 panel.add(typeBox);
-                panel.add(new JLabel("Cấp độ:"));
+                panel.add(new JLabel("レベル:"));
                 panel.add(levelBox);
-                int result = JOptionPane.showConfirmDialog(this, panel, "Chỉnh sửa câu hỏi", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                int result = JOptionPane.showConfirmDialog(this, panel, "質問を編集", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
                 if (result == JOptionPane.OK_OPTION) {
                     String newContent = contentField.getText().trim();
-                    String newType = (String) typeBox.getSelectedItem();
+                    String newTypeJp = (String) typeBox.getSelectedItem();
+                    String newType = newTypeJp.equals("文法") ? "Grammar" : "Vocabulary";
                     String newLevel = (String) levelBox.getSelectedItem();
                     if (!newContent.isEmpty()) {
                         try {
                             QuestionsBLL bll = new QuestionsBLL();
-                            // Thêm hàm updateQuestionFull nếu chưa có
                             bll.updateQuestionFull(oldQ.getQuestionID(), newContent, newType, newLevel);
                             originalQuestions = loadQuestions();
                             filteredQuestions = new ArrayList<>(originalQuestions);
                             updateQuestionTable(filteredQuestions, tableModel);
-                            JOptionPane.showMessageDialog(this, "Đã cập nhật thành công!");
+                            JOptionPane.showMessageDialog(this, "更新が完了しました！");
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(this, "Lỗi cập nhật: " + ex.getMessage());
+                            JOptionPane.showMessageDialog(this, "更新エラー: " + ex.getMessage());
                         }
                     }
                 }
             } else {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn một câu hỏi để chỉnh sửa.");
+                JOptionPane.showMessageDialog(this, "編集する質問を選択してください。");
             }
+        });
+
+        btnAdd.addActionListener(e -> {
+            AddQuestionsFromImageDialog dialog = new AddQuestionsFromImageDialog(this);
+            dialog.setVisible(true);
+            // Sau khi thêm, reload lại danh sách
+            originalQuestions = loadQuestions();
+            filteredQuestions = new ArrayList<>(originalQuestions);
+            updateQuestionTable(filteredQuestions, tableModel);
         });
 
         rightPanel.add(detailScrollPane, BorderLayout.CENTER);
