@@ -2,7 +2,6 @@ package BussinessLogic;
 import DataAccess.DAL.QuestionsDAL;
 import java.util.List;
 
-
 public class QuestionsBLL {
     private QuestionsDAL questionsDAL;
 
@@ -15,5 +14,14 @@ public class QuestionsBLL {
         return questionsDAL.getQuestions();
     }
 
-    // Thêm một câu hỏi mới
+    // Sửa nội dung câu hỏi
+    public void updateQuestion(int questionID, String newContent) throws Exception {
+        questionsDAL.updateQuestion(questionID, newContent);
+    }
+
+    // Xoá câu hỏi và các đáp án liên quan
+    public void deleteQuestionAndAnswers(int questionID) throws Exception {
+        questionsDAL.deleteAnswersByQuestionID(questionID); // Xoá đáp án trước
+        questionsDAL.deleteQuestion(questionID);            // Xoá câu hỏi
+    }
 }
