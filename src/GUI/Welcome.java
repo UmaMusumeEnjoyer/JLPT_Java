@@ -16,16 +16,16 @@ public class Welcome extends JFrame {
         // Sự kiện cho từng nút:
         // 1. btnQuestionBank: Khi nhấn sẽ mở giao diện quản lý/ngân hàng câu hỏi.
         btnQuestionBank.addActionListener(e -> {
-            // TODO: Hiển thị giao diện ngân hàng câu hỏi
-            // Ví dụ: new QuestionBankFrame().setVisible(true);
-            // this.dispose(); // nếu muốn đóng cửa sổ Welcome
+            QuestionBankFrame qbf = new QuestionBankFrame(this);
+            qbf.setVisible(true);
+            this.setVisible(false);
         });
 
         // 2. btnExamBank: Khi nhấn sẽ mở giao diện quản lý/ngân hàng đề thi.
         btnExamBank.addActionListener(e -> {
-            // TODO: Hiển thị giao diện ngân hàng đề thi
-            // Ví dụ: new ExamBankFrame().setVisible(true);
-            // this.dispose();
+            ExamBankFrame ebf = new ExamBankFrame(this);
+            ebf.setVisible(true);
+            this.setVisible(false);
         });
 
         // 3. btnExit: Khi nhấn sẽ thoát chương trình.
