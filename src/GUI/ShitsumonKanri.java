@@ -19,6 +19,8 @@ public class ShitsumonKanri extends JFrame {
     private JComboBox<String> difficultyFilterCombo;
     private JTextArea questionDetailArea;
     private List<QuestionWithAnswersVM> originalQuestions;
+    private List<QuestionWithAnswersVM> filteredQuestions = new ArrayList<>();
+    private javax.swing.table.DefaultTableModel tableModel;
 
     public ShitsumonKanri() {
         setTitle("質問管理");
@@ -34,8 +36,8 @@ public class ShitsumonKanri extends JFrame {
 
         // Bộ lọc
         JPanel filterPanel = new JPanel(new GridLayout(2, 2, 5, 5));
-        typeFilterCombo = new JComboBox<>(new String[] {"すべて", "多肢選択", "記述"});
-        difficultyFilterCombo = new JComboBox<>(new String[] {"すべて", "易しい", "普通", "難しい"});
+        typeFilterCombo = new JComboBox<>(new String[] {"すべて", "Grammar", "Vocabulary"});
+        difficultyFilterCombo = new JComboBox<>(new String[] {"すべて", "N1", "N2", "N3", "N4", "N5"});
         filterPanel.add(new JLabel("種類:"));
         filterPanel.add(typeFilterCombo);
         filterPanel.add(new JLabel("難易度:"));
@@ -48,20 +50,53 @@ public class ShitsumonKanri extends JFrame {
         filterButtonPanel.add(btnFilter);
         filterButtonPanel.add(btnClear);
 
-        // Danh sách câu hỏi
-        questionListModel = new DefaultListModel<>();
-        questionJList = new JList<>(questionListModel);
-        JScrollPane listScrollPane = new JScrollPane(questionJList);
+        // Danh sách câu hỏi dưới dạng bảng
+        String[] columnNames = {"質問", "レベル", "種類"};
+        tableModel = new javax.swing.table.DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        JTable questionTable = new JTable(tableModel);
+        questionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane listScrollPane = new JScrollPane(questionTable);
 
-        // Cập nhật danh sách ban đầu
-        updateQuestionList(originalQuestions);
+        // Cập nhật bảng ban đầu
+        filteredQuestions = new ArrayList<>(originalQuestions);
+        updateQuestionTable(filteredQuestions, tableModel);
+
+        // Sự kiện chọn dòng để hiển thị chi tiết
+        questionTable.getSelectionModel().addListSelectionListener(e -> {
+            int selectedRow = questionTable.getSelectedRow();
+            if (selectedRow >= 0 && selectedRow < filteredQuestions.size()) {
+                QuestionWithAnswersVM selected = filteredQuestions.get(selectedRow);
+                StringBuilder sb = new StringBuilder();
+                sb.append("ID: ").append(selected.getQuestion().getQuestionID()).append("\n");
+                sb.append("内容: ").append(selected.getQuestion().getContent()).append("\n");
+                sb.append("種類: ").append(selected.getQuestion().getType()).append("\n");
+                sb.append("難易度: ").append(selected.getQuestion().getLevel()).append("\n");
+                sb.append("【選択肢】\n");
+                if (selected.getAnswers() != null) {
+                    for (DataAccess.DTO.Answers ans : selected.getAnswers()) {
+                        sb.append("- ").append(ans.getContent());
+                        if (ans.isCorrect()) sb.append("  (正解)");
+                        sb.append("\n");
+                    }
+                }
+                questionDetailArea.setText(sb.toString());
+            } else {
+                questionDetailArea.setText("");
+            }
+        });
 
         // Thêm sự kiện lọc
         btnFilter.addActionListener(e -> applyFilters());
         btnClear.addActionListener(e -> {
             typeFilterCombo.setSelectedIndex(0);
             difficultyFilterCombo.setSelectedIndex(0);
-            updateQuestionList(originalQuestions);
+            filteredQuestions = new ArrayList<>(originalQuestions);
+            updateQuestionTable(filteredQuestions, tableModel);
         });
 
         // Gộp panel trái
@@ -93,29 +128,6 @@ public class ShitsumonKanri extends JFrame {
         rightPanel.add(detailScrollPane, BorderLayout.CENTER);
         rightPanel.add(buttonPanel, BorderLayout.NORTH);
 
-        // Sự kiện chọn câu hỏi để hiển thị chi tiết
-        questionJList.addListSelectionListener(e -> {
-            QuestionWithAnswersVM selected = questionJList.getSelectedValue();
-            if (selected != null) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("ID: ").append(selected.getQuestion().getQuestionID()).append("\n");
-                sb.append("内容: ").append(selected.getQuestion().getContent()).append("\n");
-                sb.append("種類: ").append(selected.getQuestion().getType()).append("\n");
-                sb.append("難易度: ").append(selected.getQuestion().getLevel()).append("\n");
-                sb.append("【選択肢】\n");
-                if (selected.getAnswers() != null) {
-                    for (DataAccess.DTO.Answers ans : selected.getAnswers()) {
-                        sb.append("- ").append(ans.getContent());
-                        if (ans.isCorrect()) sb.append("  (正解)");
-                        sb.append("\n");
-                    }
-                }
-                questionDetailArea.setText(sb.toString());
-            } else {
-                questionDetailArea.setText("");
-            }
-        });
-
         // Chia giao diện
         getContentPane().setLayout(new GridLayout(1, 2));
         getContentPane().add(leftPanel);
@@ -133,20 +145,30 @@ public class ShitsumonKanri extends JFrame {
         }
     }
 
-    private void updateQuestionList(List<QuestionWithAnswersVM> questions) {
-        questionListModel.clear();
+    private void updateQuestionTable(List<QuestionWithAnswersVM> questions, javax.swing.table.DefaultTableModel tableModel) {
+        tableModel.setRowCount(0);
         for (QuestionWithAnswersVM q : questions) {
-            questionListModel.addElement(q);
+            String level = q.getQuestion().getLevel();
+            String type = q.getQuestion().getType();
+            // Đảm bảo không null và chuẩn hóa hiển thị
+            if (level == null || level.trim().isEmpty()) level = "(Không xác định)";
+            if (type == null || type.trim().isEmpty()) type = "(Không xác định)";
+            Object[] row = {
+                q.getQuestion().getContent(),
+                level,
+                type
+            };
+            tableModel.addRow(row);
         }
     }
 
     private void applyFilters() {
         String type = (String) typeFilterCombo.getSelectedItem();
         String difficulty = (String) difficultyFilterCombo.getSelectedItem();
-        List<QuestionWithAnswersVM> filtered = originalQuestions.stream()
+        filteredQuestions = originalQuestions.stream()
                 .filter(q -> (type.equals("すべて") || q.getQuestion().getType().equals(type)) &&
                              (difficulty.equals("すべて") || q.getQuestion().getLevel().equals(difficulty)))
                 .collect(Collectors.toList());
-        updateQuestionList(filtered);
+        updateQuestionTable(filteredQuestions, tableModel);
     }
 }

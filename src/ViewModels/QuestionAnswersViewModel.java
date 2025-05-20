@@ -23,6 +23,9 @@ public class QuestionAnswersViewModel {
             Questions q = new Questions();
             q.setQuestionID((Integer) row.get(0));
             q.setContent((String) row.get(1));
+            // Đảm bảo lấy đúng Type và Level nếu có trong bảng
+            if (row.size() > 2 && row.get(2) != null) q.setType(row.get(2).toString());
+            if (row.size() > 3 && row.get(3) != null) q.setLevel(row.get(3).toString());
             questions.add(q);
         }
 
