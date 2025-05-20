@@ -41,6 +41,18 @@ public class QuestionsDAL {
         dbConnect.executeNonQuery(sql, wrapParams(params));
     }
 
+    // Lấy danh sách câu hỏi và đáp án theo Type và Level (cho phép truyền % để lấy tất cả)
+    public List<List<Object>> getQuestionsWithAnswersByTypeAndLevel(String type, String level) throws Exception {
+        String sql = "SELECT q.QuestionID, q.Content, q.Type, q.Level, a.AnswerID, a.Content, a.IsCorrect " +
+                     "FROM Questions q " +
+                     "LEFT JOIN Answers a ON q.QuestionID = a.QuestionID " +
+                     "WHERE q.Type LIKE ? AND q.Level LIKE ?";
+        ArrayList<Object> params = new ArrayList<>();
+        params.add(type);
+        params.add(level);
+        return dbConnect.getData(sql, wrapParams(params));
+    }
+
     // Helper: chuyển ArrayList<Object> sang List<DbConnect.SqlParameter>
     private List<DbConnect.SqlParameter> wrapParams(List<Object> params) {
         List<DbConnect.SqlParameter> sqlParams = new ArrayList<>();
@@ -49,4 +61,7 @@ public class QuestionsDAL {
         }
         return sqlParams;
     }
+
+
 }
+

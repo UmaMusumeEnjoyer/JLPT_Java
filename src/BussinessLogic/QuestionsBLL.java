@@ -24,4 +24,10 @@ public class QuestionsBLL {
         questionsDAL.deleteAnswersByQuestionID(questionID); // Xoá đáp án trước
         questionsDAL.deleteQuestion(questionID);            // Xoá câu hỏi
     }
+
+    // Lấy danh sách câu hỏi và đáp án theo Type và Level
+    public List<List<Object>> getQuestionsWithAnswersByTypeAndLevel(String type, String level) throws Exception {
+        return questionsDAL.getQuestionsWithAnswersByTypeAndLevel(type, level);
+    }
+
 }
