@@ -122,9 +122,11 @@ public class ShitsumonKanri extends JFrame {
         JButton btnAdd = new JButton("追加");
         JButton btnEdit = new JButton("編集");
         JButton btnDelete = new JButton("削除");
+        JButton btnEditAnswers = new JButton("選択肢編集");
         buttonPanel.add(btnAdd);
         buttonPanel.add(btnEdit);
         buttonPanel.add(btnDelete);
+        buttonPanel.add(btnEditAnswers);
 
         // Xử lý xóa câu hỏi
         btnDelete.addActionListener(e -> {
@@ -209,6 +211,26 @@ public class ShitsumonKanri extends JFrame {
             originalQuestions = loadQuestions();
             filteredQuestions = new ArrayList<>(originalQuestions);
             updateQuestionTable(filteredQuestions, tableModel);
+        });
+
+        btnEditAnswers.addActionListener(e -> {
+            int selectedRow = questionTable.getSelectedRow();
+            if (selectedRow >= 0 && selectedRow < filteredQuestions.size()) {
+                QuestionWithAnswersVM selected = filteredQuestions.get(selectedRow);
+                List<Answers> answers = selected.getAnswers();
+                if (answers == null || answers.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "この質問には選択肢がありません。");
+                    return;
+                }
+                EditAnswersDialog dialog = new EditAnswersDialog(this, selected.getQuestion().getQuestionID(), answers);
+                dialog.setVisible(true);
+                // Sau khi chỉnh sửa, reload lại danh sách
+                originalQuestions = loadQuestions();
+                filteredQuestions = new ArrayList<>(originalQuestions);
+                updateQuestionTable(filteredQuestions, tableModel);
+            } else {
+                JOptionPane.showMessageDialog(this, "編集する質問を選択してください。");
+            }
         });
 
         rightPanel.add(detailScrollPane, BorderLayout.CENTER);

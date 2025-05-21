@@ -16,17 +16,22 @@ public class ExamsBLL {
     }
 
     // Thêm một bài thi mới
-//    public void addExam(String examName, String examDate) throws Exception {
-//        examsDAL.addExam(examName, examDate);
-//    }
-//
-//    // Cập nhật thông tin bài thi
-//    public void updateExam(int examID, String examName, String examDate) throws Exception {
-//        examsDAL.updateExam(examID, examName, examDate);
-//    }
-//
-//    // Xóa một bài thi
-//    public void deleteExam(int examID) throws Exception {
-//        examsDAL.deleteExam(examID);
-//    }
+    public int addExam(String title) throws Exception {
+        return examsDAL.addExam(title);
+    }
+
+    // Overload: Thêm một bài thi mới với Connection (for transaction)
+    public int addExam(java.sql.Connection conn, String title) throws Exception {
+        return examsDAL.addExam(conn, title);
+    }
+
+    // Cập nhật thông tin bài thi
+    public void updateExam(int examID, String title) throws Exception {
+        examsDAL.updateExam(examID, title);
+    }
+
+    // Xóa một bài thi
+    public void deleteExam(int examID) throws Exception {
+        examsDAL.deleteExam(examID);
+    }
 }

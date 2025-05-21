@@ -1,6 +1,7 @@
 //package ai;
 
 import GUI.Welrucomucomu;
+import ai.ExtractQuestionsFromImageByExe;
 
 public class Main {
 
@@ -8,6 +9,5 @@ public class Main {
 
         Welrucomucomu welrucomucomu = new Welrucomucomu("チャン・クアン・ズン");
         welrucomucomu.setVisible(true);
-
     }
 }

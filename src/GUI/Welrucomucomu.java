@@ -22,11 +22,11 @@ public class Welrucomucomu extends JFrame {
         // Xử lý sự kiện nút "終了"
         btnExit.addActionListener(e -> System.exit(0));
         // Xử lý sự kiện nút "試験管理"
-//        btnManageExams.addActionListener(e -> {
-//            // Mở cửa sổ quản lý đề thi
-//            ShikenKanri shikenKanri = new ShikenKanri();
-//            shikenKanri.setVisible(true);
-//        });
+        btnManageExams.addActionListener(e -> {
+            // Mở cửa sổ quản lý đề thi
+            ExamKanri shikenKanri = new ExamKanri();
+            shikenKanri.setVisible(true);
+        });
         // Xử lý sự kiện nút "質問管理"
         btnManageQuestions.addActionListener(e -> {
             // Mở cửa sổ quản lý câu hỏi

@@ -20,9 +20,9 @@ public class AnswersBLL {
 //    }
 //
 //    // Cập nhật một câu trả lời
-//    public void updateAnswer(int answerId, String answerText) throws Exception {
-//        answersDAL.updateAnswer(answerId, answerText);
-//    }
+    public void updateAnswer(int answerId, String content, boolean isCorrect) throws Exception {
+        answersDAL.updateAnswer(answerId, content, isCorrect);
+    }
 //
 //    // Xóa một câu trả lời
 //    public void deleteAnswer(int answerId) throws Exception {
