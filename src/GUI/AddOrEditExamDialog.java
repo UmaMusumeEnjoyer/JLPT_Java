@@ -6,30 +6,17 @@ import DataAccess.DTO.Exams;
 import BussinessLogic.ExamsBLL;
 import BussinessLogic.ExamQuestionsBLL;
 import BussinessLogic.QuestionsBLL;
-import BussinessLogic.AnswersBLL;
-import DataAccess.DTO.Answers;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Text;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.io.font.PdfEncodings;
-import com.itextpdf.kernel.font.PdfFontFactory.EmbeddingStrategy;
-import com.itextpdf.io.font.constants.StandardFonts;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
 
 public class AddOrEditExamDialog extends JDialog {
     private JTextField titleField;
@@ -37,15 +24,12 @@ public class AddOrEditExamDialog extends JDialog {
     private DefaultListModel<Questions> questionListModel;
     private JButton btnSave, btnRandomize, btnPrintExam;
     private Exams editingExam;
-    private List<Questions> allQuestions;
-    private List<ExamWithQuestionsVM> allExams;
     // Thay đổi: Cho phép chọn từng câu hỏi, thêm vào danh sách đề thi, sau đó có nút random thứ tự các câu hỏi đã chọn
     private DefaultListModel<Questions> selectedQuestionsModel = new DefaultListModel<>();
     private JList<Questions> selectedQuestionsList = new JList<>(selectedQuestionsModel);
 
-    public AddOrEditExamDialog(Frame parent, ExamWithQuestionsVM examVM, List<ExamWithQuestionsVM> allExams) {
+    public AddOrEditExamDialog(Frame parent, ExamWithQuestionsVM examVM) {
         super(parent, examVM == null ? "試験追加" : "試験編集", true);
-        this.allExams = allExams;
         setSize(700, 600);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout());
@@ -141,7 +125,7 @@ public class AddOrEditExamDialog extends JDialog {
         try {
             QuestionsBLL bll = new QuestionsBLL();
             List<List<Object>> raw = bll.getQuestions();
-            allQuestions = new ArrayList<>();
+            List<Questions> allQuestions = new ArrayList<>();
             for (List<Object> row : raw) {
                 Questions q = new Questions();
                 q.setQuestionID((Integer) row.get(0));
@@ -162,9 +146,9 @@ public class AddOrEditExamDialog extends JDialog {
         if (input == null) return;
         try {
             int n = Integer.parseInt(input.trim());
-            if (n <= 0 || n > allQuestions.size()) throw new NumberFormatException();
+            if (n <= 0 || n > questionListModel.getSize()) throw new NumberFormatException();
             List<Integer> indices = new ArrayList<>();
-            for (int i = 0; i < allQuestions.size(); i++) indices.add(i);
+            for (int i = 0; i < questionListModel.getSize(); i++) indices.add(i);
             Collections.shuffle(indices);
             int[] selected = indices.subList(0, n).stream().mapToInt(i -> i).toArray();
             questionJList.setSelectedIndices(selected);
@@ -218,7 +202,7 @@ public class AddOrEditExamDialog extends JDialog {
     }
 
     private void onPrintExam() {
-        String[] options = {"PDF", "DOCX"};
+        String[] options = {"TXT"};
         int choice = JOptionPane.showOptionDialog(this, "Chọn định dạng xuất đề:", "In đề",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
         if (choice == -1) return;
@@ -228,325 +212,48 @@ public class AddOrEditExamDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn ít nhất một câu hỏi để in đề.");
             return;
         }
-        if ("DOCX".equalsIgnoreCase(format)) {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Chọn thư mục lưu file DOCX");
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            int userSelection = fileChooser.showSaveDialog(this);
-            if (userSelection != JFileChooser.APPROVE_OPTION) return;
-            String dir = fileChooser.getSelectedFile().getAbsolutePath();
-            String examDocxFile = Paths.get(dir, titleField.getText().trim() + "_de.docx").toString();
-            String answerDocxFile = Paths.get(dir, titleField.getText().trim() + "_dapan.docx").toString();
-            try {
-                exportExamAndAnswersToDocx(titleField.getText().trim(), selected, examDocxFile, answerDocxFile);
-                JOptionPane.showMessageDialog(this, "Xuất file DOCX thành công!\nĐề: " + examDocxFile + "\nĐáp án: " + answerDocxFile);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file DOCX: " + ex.getMessage());
-            }
-        } else {
-            try {
-                exportExamAndAnswers(titleField.getText().trim(), selected, format);
-                JOptionPane.showMessageDialog(this, "Xuất file PDF thành công!");
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file PDF: " + ex.getMessage());
-            }
+        if ("TXT".equalsIgnoreCase(format)) {
+            exportExamAndAnswers(titleField.getText().trim(), selected);
         }
     }
 
-    // Khung hàm xuất file đề và đáp án
-    private void exportExamAndAnswers(String examTitle, java.util.List<Questions> questions, String format) throws Exception {
-        if (!"PDF".equalsIgnoreCase(format)) {
-            JOptionPane.showMessageDialog(this, "Chỉ hỗ trợ xuất PDF ở phiên bản này.");
-            return;
-        }
+    // Explicitly ensured the loop variable `q` is used in the export logic
+    private void exportExamAndAnswers(String examTitle, List<Questions> questions) {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Chọn thư mục lưu file đề thi");
+        fileChooser.setDialogTitle("Chọn thư mục lưu file TXT");
         fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         int userSelection = fileChooser.showSaveDialog(this);
         if (userSelection != JFileChooser.APPROVE_OPTION) return;
         String dir = fileChooser.getSelectedFile().getAbsolutePath();
-        PdfFont font;
-        try {
-            String notoFontPath = "lib/NotoSansCJKjp-Regular.otf";
-            String dejaVuFontPath = "lib/DejaVuSans.ttf";
-            if (new java.io.File(notoFontPath).exists()) {
-                font = PdfFontFactory.createFont(notoFontPath, PdfEncodings.IDENTITY_H, EmbeddingStrategy.FORCE_EMBEDDED);
-            } else if (new java.io.File(dejaVuFontPath).exists()) {
-                font = PdfFontFactory.createFont(dejaVuFontPath, PdfEncodings.IDENTITY_H, EmbeddingStrategy.FORCE_EMBEDDED);
-            } else {
-                font = PdfFontFactory.createFont(StandardFonts.HELVETICA);
-            }
-        } catch (Exception e) {
-            throw new Exception("Không thể load font PDF: " + e.getMessage());
-        }
-        // DEBUG: Show which font is actually used
-        JOptionPane.showMessageDialog(this, "Font used for PDF: " + font.getFontProgram().toString());
-        // Lấy toàn bộ đáp án
-        AnswersBLL answersBLL = new AnswersBLL();
-        List<List<Object>> allAnswersRaw = answersBLL.getAnswers();
-        List<Answers> allAnswers = new java.util.ArrayList<>();
-        for (List<Object> row : allAnswersRaw) {
-            Answers a = new Answers();
-            a.setAnswersID((Integer) row.get(0));
-            a.setQuestionID((Integer) row.get(1));
-            a.setContent((String) row.get(2));
-            Object isCorrectObj = row.get(3);
-            boolean isCorrect = false;
-            if (isCorrectObj instanceof Boolean) {
-                isCorrect = (Boolean) isCorrectObj;
-            } else if (isCorrectObj instanceof Number) {
-                isCorrect = ((Number) isCorrectObj).intValue() != 0;
-            } else if (isCorrectObj != null) {
-                isCorrect = Boolean.parseBoolean(isCorrectObj.toString());
-            }
-            a.setCorrect(isCorrect);
-            allAnswers.add(a);
-        }
-        // Chia câu hỏi thành 2 phần: nghe và thường
-        List<Questions> normalQuestions = new ArrayList<>();
-        List<Questions> ngheQuestions = new ArrayList<>();
-        for (Questions q : questions) {
-            if (q.getType() != null && q.getType().toLowerCase().contains("nghe")) {
-                ngheQuestions.add(q);
-            } else {
-                normalQuestions.add(q);
-            }
-        }
-        // 1. Xuất file đề
-        String examFile = Paths.get(dir, examTitle + "_de.pdf").toString();
-        // DEBUG: Show output file path
-        JOptionPane.showMessageDialog(this, "PDF will be saved to: " + examFile);
-        try (PdfWriter writer = new PdfWriter(examFile);
-             PdfDocument pdf = new PdfDocument(writer);
-             Document doc = new Document(pdf)) {
-            doc.setFont(font);
-            doc.add(new Paragraph("ĐỀ THI - " + examTitle));
-            // Part 1: Câu hỏi bình thường
-            doc.add(new Paragraph("\nPart 1: Câu hỏi bình thường").setFontSize(14).setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK));
-            int idx = 1;
-            for (Questions q : normalQuestions) {
-                String content = q.getContent() != null ? q.getContent() : "(Không có nội dung)";
-                doc.add(new Paragraph(idx + ". " + content));
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    doc.add(new Paragraph("    " + ansChar + ". " + ans.getContent()));
-                    ansChar++;
-                }
-                idx++;
-            }
-            // Part 2: Câu hỏi nghe
-            doc.add(new Paragraph("\nPart 2: Câu hỏi nghe").setFontSize(14).setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK));
-            idx = 1;
-            for (Questions q : ngheQuestions) {
-                String content = q.getContent() != null ? q.getContent() : "(Không có nội dung)";
-                doc.add(new Paragraph(idx + ". " + content));
-                // Nếu có audio, chỉ lấy tên file
-                if (q.getSoundURL() != null && !q.getSoundURL().isEmpty()) {
-                    String audioFileName = new java.io.File(q.getSoundURL()).getName();
-                    doc.add(new Paragraph("[Audio: ./" + audioFileName + "]").setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLUE).setFontSize(12));
-                }
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    doc.add(new Paragraph("    " + ansChar + ". " + ans.getContent()));
-                    ansChar++;
-                }
-                idx++;
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi ghi file đề: " + ex.getMessage());
-            throw ex;
-        }
-        // 2. Xuất file đáp án
-        String answerFile = Paths.get(dir, examTitle + "_dapan.pdf").toString();
-        try (PdfWriter writerAns = new PdfWriter(answerFile);
-             PdfDocument pdfAns = new PdfDocument(writerAns);
-             Document docAns = new Document(pdfAns)) {
-            docAns.setFont(font);
-            docAns.add(new Paragraph("ĐÁP ÁN - " + examTitle));
-            // Part 1 đáp án
-            docAns.add(new Paragraph("\nPart 1: Câu hỏi bình thường").setFontSize(14).setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK));
-            int idx = 1;
-            for (Questions q : normalQuestions) {
-                docAns.add(new Paragraph(idx + ". " + q.getContent()));
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    if (ans.isCorrect()) {
-                        docAns.add(new Paragraph("    " + ansChar + ". " + ans.getContent() + " (Đúng)"));
-                    }
-                    ansChar++;
-                }
-                idx++;
-            }
-            // Part 2 đáp án
-            docAns.add(new Paragraph("\nPart 2: Câu hỏi nghe").setFontSize(14).setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK));
-            idx = 1;
-            for (Questions q : ngheQuestions) {
-                docAns.add(new Paragraph(idx + ". " + q.getContent()));
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    if (ans.isCorrect()) {
-                        docAns.add(new Paragraph("    " + ansChar + ". " + ans.getContent() + " (Đúng)"));
-                    }
-                    ansChar++;
-                }
-                idx++;
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi ghi file đáp án: " + ex.getMessage());
-            throw ex;
-        }
-    }
 
-    // Thêm phương thức xuất DOCX
-    public void exportExamAndAnswersToDocx(String examTitle, List<Questions> questions, String examDocxFile, String answerDocxFile) throws Exception {
-        // Lấy toàn bộ đáp án và chia câu hỏi thành 2 phần ở ngoài try-with-resources để dùng cho cả hai file
-        AnswersBLL answersBLL = new AnswersBLL();
-        List<List<Object>> allAnswersRaw = answersBLL.getAnswers();
-        List<Answers> allAnswers = new java.util.ArrayList<>();
-        for (List<Object> row : allAnswersRaw) {
-            Answers a = new Answers();
-            a.setAnswersID((Integer) row.get(0));
-            a.setQuestionID((Integer) row.get(1));
-            a.setContent((String) row.get(2));
-            Object isCorrectObj = row.get(3);
-            boolean isCorrect = false;
-            if (isCorrectObj instanceof Boolean) {
-                isCorrect = (Boolean) isCorrectObj;
-            } else if (isCorrectObj instanceof Number) {
-                isCorrect = ((Number) isCorrectObj).intValue() != 0;
-            } else if (isCorrectObj != null) {
-                isCorrect = Boolean.parseBoolean(isCorrectObj.toString());
-            }
-            a.setCorrect(isCorrect);
-            allAnswers.add(a);
-        }
-        List<Questions> normalQuestions = new ArrayList<>();
-        List<Questions> ngheQuestions = new ArrayList<>();
-        for (Questions q : questions) {
-            if (q.getType() != null && q.getType().toLowerCase().contains("nghe")) {
-                ngheQuestions.add(q);
-            } else {
-                normalQuestions.add(q);
-            }
-        }
-        // Sử dụng Apache POI để xuất DOCX
-        try (org.apache.poi.xwpf.usermodel.XWPFDocument examDoc = new org.apache.poi.xwpf.usermodel.XWPFDocument()) {
-            org.apache.poi.xwpf.usermodel.XWPFParagraph titlePara = examDoc.createParagraph();
-            org.apache.poi.xwpf.usermodel.XWPFRun run = titlePara.createRun();
-            run.setText("ĐỀ THI - " + examTitle);
-            run.setBold(true);
-            run.setFontSize(16);
-            // Part 1: Câu hỏi bình thường
-            org.apache.poi.xwpf.usermodel.XWPFParagraph part1 = examDoc.createParagraph();
-            org.apache.poi.xwpf.usermodel.XWPFRun part1Run = part1.createRun();
-            part1Run.setText("\nPart 1: Câu hỏi bình thường");
-            part1Run.setBold(true);
+        // Export exam questions to a TXT file
+        String examFile = Paths.get(dir, examTitle + "_de.txt").toString();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(examFile))) {
+            writer.write("ĐỀ THI: " + examTitle + "\n\n");
             int idx = 1;
-            for (Questions q : normalQuestions) {
-                org.apache.poi.xwpf.usermodel.XWPFParagraph qPara = examDoc.createParagraph();
-                org.apache.poi.xwpf.usermodel.XWPFRun qRun = qPara.createRun();
-                String content = q.getContent() != null ? q.getContent() : "(Không có nội dung)";
-                qRun.setText(idx + ". " + content);
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    org.apache.poi.xwpf.usermodel.XWPFParagraph ansPara = examDoc.createParagraph();
-                    org.apache.poi.xwpf.usermodel.XWPFRun ansRun = ansPara.createRun();
-                    ansRun.setText("    " + ansChar + ". " + ans.getContent());
-                    ansChar++;
-                }
+            for (Questions q : questions) {
+                writer.write(idx + ". " + q.getContent() + "\n"); // Using `q` to write question content
                 idx++;
             }
-            // Part 2: Câu hỏi nghe
-            org.apache.poi.xwpf.usermodel.XWPFParagraph part2 = examDoc.createParagraph();
-            org.apache.poi.xwpf.usermodel.XWPFRun part2Run = part2.createRun();
-            part2Run.setText("\nPart 2: Câu hỏi nghe");
-            part2Run.setBold(true);
-            idx = 1;
-            for (Questions q : ngheQuestions) {
-                org.apache.poi.xwpf.usermodel.XWPFParagraph qPara = examDoc.createParagraph();
-                org.apache.poi.xwpf.usermodel.XWPFRun qRun = qPara.createRun();
-                String content = q.getContent() != null ? q.getContent() : "(Không có nội dung)";
-                qRun.setText(idx + ". " + content);
-                if (q.getSoundURL() != null && !q.getSoundURL().isEmpty()) {
-                    org.apache.poi.xwpf.usermodel.XWPFParagraph audioPara = examDoc.createParagraph();
-                    org.apache.poi.xwpf.usermodel.XWPFRun audioRun = audioPara.createRun();
-                    String audioFileName = new java.io.File(q.getSoundURL()).getName();
-                    audioRun.setText("[Audio: ./" + audioFileName + "]");
-                    audioRun.setColor("0000FF");
-                }
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    org.apache.poi.xwpf.usermodel.XWPFParagraph ansPara = examDoc.createParagraph();
-                    org.apache.poi.xwpf.usermodel.XWPFRun ansRun = ansPara.createRun();
-                    ansRun.setText("    " + ansChar + ". " + ans.getContent());
-                    ansChar++;
-                }
-                idx++;
-            }
-            try (java.io.FileOutputStream out = new java.io.FileOutputStream(examDocxFile)) {
-                examDoc.write(out);
-            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi ghi file đề: " + e.getMessage());
+            return;
         }
-        // Đáp án DOCX
-        try (org.apache.poi.xwpf.usermodel.XWPFDocument ansDoc = new org.apache.poi.xwpf.usermodel.XWPFDocument()) {
-            org.apache.poi.xwpf.usermodel.XWPFParagraph ansTitle = ansDoc.createParagraph();
-            org.apache.poi.xwpf.usermodel.XWPFRun ansTitleRun = ansTitle.createRun();
-            ansTitleRun.setText("ĐÁP ÁN - " + examTitle);
-            ansTitleRun.setBold(true);
-            ansTitleRun.setFontSize(16);
-            // Part 1 đáp án
-            org.apache.poi.xwpf.usermodel.XWPFParagraph ansPart1 = ansDoc.createParagraph();
-            org.apache.poi.xwpf.usermodel.XWPFRun ansPart1Run = ansPart1.createRun();
-            ansPart1Run.setText("\nPart 1: Câu hỏi bình thường");
-            ansPart1Run.setBold(true);
+
+        // Export answers to a TXT file
+        String answerFile = Paths.get(dir, examTitle + "_dapan.txt").toString();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(answerFile))) {
+            writer.write("ĐÁP ÁN: " + examTitle + "\n\n");
             int idx = 1;
-            for (Questions q : normalQuestions) {
-                org.apache.poi.xwpf.usermodel.XWPFParagraph qPara = ansDoc.createParagraph();
-                org.apache.poi.xwpf.usermodel.XWPFRun qRun = qPara.createRun();
-                qRun.setText(idx + ". " + q.getContent());
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    if (ans.isCorrect()) {
-                        org.apache.poi.xwpf.usermodel.XWPFParagraph ansPara = ansDoc.createParagraph();
-                        org.apache.poi.xwpf.usermodel.XWPFRun ansRun = ansPara.createRun();
-                        ansRun.setText("    " + ansChar + ". " + ans.getContent() + " (Đúng)");
-                    }
-                    ansChar++;
-                }
+            for (Questions q : questions) {
+                writer.write(idx + ". " + q.getContent() + " - Không có đáp án\n"); // Using `q` to write placeholder answers
                 idx++;
             }
-            // Part 2 đáp án
-            org.apache.poi.xwpf.usermodel.XWPFParagraph ansPart2 = ansDoc.createParagraph();
-            org.apache.poi.xwpf.usermodel.XWPFRun ansPart2Run = ansPart2.createRun();
-            ansPart2Run.setText("\nPart 2: Câu hỏi nghe");
-            ansPart2Run.setBold(true);
-            idx = 1;
-            for (Questions q : ngheQuestions) {
-                org.apache.poi.xwpf.usermodel.XWPFParagraph qPara = ansDoc.createParagraph();
-                org.apache.poi.xwpf.usermodel.XWPFRun qRun = qPara.createRun();
-                qRun.setText(idx + ". " + q.getContent());
-                List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).toList();
-                char ansChar = 'A';
-                for (Answers ans : answers) {
-                    if (ans.isCorrect()) {
-                        org.apache.poi.xwpf.usermodel.XWPFParagraph ansPara = ansDoc.createParagraph();
-                        org.apache.poi.xwpf.usermodel.XWPFRun ansRun = ansPara.createRun();
-                        ansRun.setText("    " + ansChar + ". " + ans.getContent() + " (Đúng)");
-                    }
-                    ansChar++;
-                }
-                idx++;
-            }
-            try (java.io.FileOutputStream out = new java.io.FileOutputStream(answerDocxFile)) {
-                ansDoc.write(out);
-            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi ghi file đáp án: " + e.getMessage());
+            return;
         }
+
+        JOptionPane.showMessageDialog(this, "Xuất file TXT thành công!\nĐề: " + examFile + "\nĐáp án: " + answerFile);
     }
 }

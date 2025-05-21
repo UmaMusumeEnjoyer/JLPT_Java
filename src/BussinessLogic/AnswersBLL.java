@@ -14,6 +14,10 @@ public class AnswersBLL {
         return answersDAL.getAnswers();
     }
 
+    public List<DataAccess.DTO.Answers> getAnswersByQuestionID(int questionID) throws Exception {
+        return answersDAL.getAnswersByQuestionID(questionID);
+    }
+
 //    // Thêm một câu trả lời mới
 //    public void addAnswer(String answerText, int questionId) throws Exception {
 //        answersDAL.addAnswer(answerText, questionId);

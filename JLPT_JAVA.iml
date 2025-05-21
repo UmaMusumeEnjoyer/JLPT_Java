@@ -7,18 +7,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="hyph-9.2.0" level="project" />
-    <orderEntry type="library" name="pdfa-9.2.0" level="project" />
-    <orderEntry type="library" name="sign-9.2.0" level="project" />
-    <orderEntry type="library" name="styled-xml-parser-9.2.0" level="project" />
-    <orderEntry type="library" name="svg-9.2.0" level="project" />
-    <orderEntry type="library" name="poi-5.4.1" level="project" />
-    <orderEntry type="library" name="poi-ooxml-5.4.1" level="project" />
-    <orderEntry type="library" name="poi-ooxml-lite-5.4.1" level="project" />
-    <orderEntry type="library" name="xmlbeans-5.1.1" level="project" />
-    <orderEntry type="library" name="commons-compress-1.21" level="project" />
-    <orderEntry type="library" name="commons-collections4-4.4" level="project" />
-    <orderEntry type="library" name="ooxml-schemas-1.4" level="project" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
@@ -28,11 +16,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="slf4j-api-2.0.7" level="project" />
-    <orderEntry type="library" name="slf4j-nop-2.0.7" level="project" />
-    <orderEntry type="library" name="jackson-databind-2.11.1" level="project" />
-    <orderEntry type="library" name="jackson-core-2.11.1" level="project" />
-    <orderEntry type="library" name="jackson-annotations-2.11.1" level="project" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
@@ -43,9 +26,31 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="hyph-9.2.0" level="project" />
-    <orderEntry type="library" name="commons-io-2.11.0" level="project" />
     <orderEntry type="library" name="xmlbeans-5.1.1" level="project" />
+    <orderEntry type="library" name="commons-collections4-4.4" level="project" />
+    <orderEntry type="library" name="commons-compress-1.21" level="project" />
+    <orderEntry type="library" name="commons-io-2.11.0" level="project" />
+    <orderEntry type="library" name="font-asian-7.2.5" level="project" />
+    <orderEntry type="library" name="io-7.2.5" level="project" />
+    <orderEntry type="library" name="jackson-annotations-2.11.1" level="project" />
+    <orderEntry type="library" name="jackson-core-2.11.1" level="project" />
+    <orderEntry type="library" name="jackson-databind-2.11.1" level="project" />
+    <orderEntry type="library" name="kernel-7.2.5" level="project" />
+    <orderEntry type="library" name="layout-7.2.5" level="project" />
     <orderEntry type="library" name="log4j-api-2.20.0" level="project" />
     <orderEntry type="library" name="log4j-core-2.20.0" level="project" />
+    <orderEntry type="library" name="mysql-connector-j-9.3.0" level="project" />
+    <orderEntry type="library" name="ooxml-schemas-1.4" level="project" />
+    <orderEntry type="library" name="poi-5.4.1" level="project" />
+    <orderEntry type="library" name="poi-ooxml-5.4.1" level="project" />
+    <orderEntry type="library" name="poi-ooxml-lite-5.4.1" level="project" />
+    <orderEntry type="library" name="slf4j-api-2.0.7" level="project" />
+    <orderEntry type="library" name="slf4j-nop-2.0.7" level="project" />
+    <orderEntry type="library" name="font-asian-7.2.5" level="project" />
+    <orderEntry type="library" name="commons-collections4-4.4" level="project" />
+    <orderEntry type="library" name="commons-7.2.5" level="project" />
+    <orderEntry type="library" name="pdfbox-app-3.0.5" level="project" />
+    <orderEntry type="library" name="pdfbox-3.0.5" level="project" />
+    <orderEntry type="library" name="fontbox-3.0.5" level="project" />
   </component>
 </module>

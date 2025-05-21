@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="io-9.2.0 (2)">
+  <library name="font-asian-7.2.5">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/io-9.2.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/font-asian-7.2.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
