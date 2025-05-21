@@ -66,7 +66,6 @@ public class ExamKanri extends JFrame {
                 examDetailArea.setText("");
             }
         });
-
         btnAdd.addActionListener(e -> {
             AddOrEditExamDialog dialog = new AddOrEditExamDialog(this, null);
             dialog.setVisible(true);
@@ -122,10 +121,10 @@ public class ExamKanri extends JFrame {
                 try {
                     if ("PDF".equalsIgnoreCase(options[choice])) {
                         ExamExporter.exportToPDFWithAnswerKey(this, selected.getExam().getTitle(), selected.getQuestions());
-                        JOptionPane.showMessageDialog(this, "ファイルの出力が完了しました！\n(Đề và đáp án đã được lưu riêng biệt)");
+                        JOptionPane.showMessageDialog(this, "ファイルの出力が完了しました！\n(問題と解答が別ファイルで保存されました)");
                     } else if ("DOC".equalsIgnoreCase(options[choice])) {
                         ExamExporter.exportToDOCWithAnswerKey(this, selected.getExam().getTitle(), selected.getQuestions());
-                        JOptionPane.showMessageDialog(this, "ファイルの出力が完了しました！\n(Đề và đáp án đã được lưu riêng biệt)");
+                        JOptionPane.showMessageDialog(this, "ファイルの出力が完了しました！\n(問題と解答が別ファイルで保存されました)");
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "ファイル出力エラー: " + ex.getMessage());
@@ -134,7 +133,6 @@ public class ExamKanri extends JFrame {
                 JOptionPane.showMessageDialog(this, "印刷する試験を選択してください。");
             }
         });
-
         leftPanel.add(buttonPanel, BorderLayout.NORTH);
         leftPanel.add(listScrollPane, BorderLayout.CENTER);
 
