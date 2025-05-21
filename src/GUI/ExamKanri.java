@@ -1,15 +1,25 @@
 package GUI;
 
 import BussinessLogic.ExamsBLL;
+import BussinessLogic.AnswersBLL;
 import ViewModels.ExamQuestionsViewModel;
 import ViewModels.ExamWithQuestionsVM;
 import DataAccess.DTO.Exams;
 import DataAccess.DTO.Questions;
+import DataAccess.DTO.Answers;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.io.font.constants.StandardFonts;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class ExamKanri extends JFrame {
@@ -124,11 +134,30 @@ public class ExamKanri extends JFrame {
                         JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                 if (choice == -1) return;
                 String format = options[choice];
-                try {
-                    exportExamAndAnswers(selected.getExam().getTitle(), selected.getQuestions(), format);
-                    JOptionPane.showMessageDialog(this, "ファイルの出力が完了しました！（サンプル機能、実際の出力処理は未実装）");
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "ファイル出力エラー: " + ex.getMessage());
+                if ("DOCX".equalsIgnoreCase(format)) {
+                    JFileChooser fileChooser = new JFileChooser();
+                    fileChooser.setDialogTitle("Chọn thư mục lưu file DOCX");
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int userSelection = fileChooser.showSaveDialog(this);
+                    if (userSelection != JFileChooser.APPROVE_OPTION) return;
+                    String dir = fileChooser.getSelectedFile().getAbsolutePath();
+                    String examDocxFile = Paths.get(dir, selected.getExam().getTitle().trim() + "_de.docx").toString();
+                    String answerDocxFile = Paths.get(dir, selected.getExam().getTitle().trim() + "_dapan.docx").toString();
+                    try {
+                        // Gọi dialog ẩn để dùng static export (hoặc refactor sang static nếu cần)
+                        new AddOrEditExamDialog(this, null, null)
+                            .exportExamAndAnswersToDocx(selected.getExam().getTitle().trim(), selected.getQuestions(), examDocxFile, answerDocxFile);
+                        JOptionPane.showMessageDialog(this, "Xuất file DOCX thành công!\nĐề: " + examDocxFile + "\nĐáp án: " + answerDocxFile);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi xuất file DOCX: " + ex.getMessage());
+                    }
+                } else {
+                    try {
+                        exportExamAndAnswers(selected.getExam().getTitle(), selected.getQuestions(), format);
+                        JOptionPane.showMessageDialog(this, "ファイルの出力が完了しました！");
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(this, "ファイル出力エラー: " + ex.getMessage());
+                    }
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "印刷する試験を選択してください。");
@@ -174,10 +203,61 @@ public class ExamKanri extends JFrame {
 
     // Khung hàm xuất file đề và đáp án
     private void exportExamAndAnswers(String examTitle, java.util.List<Questions> questions, String format) throws Exception {
-        // TODO: Thực hiện xuất file PDF/DOCX cho đề và PDF cho đáp án
-        // Sử dụng iText (PDF) hoặc Apache POI (DOCX)
-        // 1. Tạo file đề: chỉ in câu hỏi, không in đáp án đúng
-        // 2. Tạo file đáp án: chỉ in số thứ tự và đáp án đúng
-        // Gợi ý: Lặp qua questions, lấy nội dung và đáp án từ DB
+        if (!"PDF".equalsIgnoreCase(format)) {
+            JOptionPane.showMessageDialog(this, "現在はPDFのみ対応しています。");
+            return;
+        }
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("保存先フォルダを選択してください");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection != JFileChooser.APPROVE_OPTION) return;
+        String dir = fileChooser.getSelectedFile().getAbsolutePath();
+        PdfFont font;
+        try {
+            font = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+        } catch (Exception e) {
+            throw new Exception("PDFフォントのロードに失敗しました: " + e.getMessage());
+        }
+        // 1. 問題PDF
+        String examFile = Paths.get(dir, examTitle + "_問題.pdf").toString();
+        PdfWriter writer = new PdfWriter(examFile);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document doc = new Document(pdf);
+        doc.setFont(font);
+        doc.add(new Paragraph("【試験名】" + examTitle));
+        int idx = 1;
+        for (Questions q : questions) {
+            doc.add(new Paragraph(idx + ". " + q.getContent()));
+            idx++;
+        }
+        doc.close();
+        // 2. 解答PDF
+        AnswersBLL answersBLL = new AnswersBLL();
+        java.util.List<List<Object>> allAnswersRaw = answersBLL.getAnswers();
+        java.util.List<Answers> allAnswers = new java.util.ArrayList<>();
+        for (java.util.List<Object> row : allAnswersRaw) {
+            Answers a = new Answers();
+            a.setAnswersID((Integer) row.get(0));
+            a.setQuestionID((Integer) row.get(1));
+            a.setContent((String) row.get(2));
+            a.setCorrect((Boolean) row.get(3));
+            allAnswers.add(a);
+        }
+        String answerFile = Paths.get(dir, examTitle + "_解答.pdf").toString();
+        PdfWriter writerAns = new PdfWriter(answerFile);
+        PdfDocument pdfAns = new PdfDocument(writerAns);
+        Document docAns = new Document(pdfAns);
+        docAns.setFont(font);
+        docAns.add(new Paragraph("【解答】" + examTitle));
+        idx = 1;
+        for (Questions q : questions) {
+            java.util.List<Answers> answers = allAnswers.stream().filter(a -> a.getQuestionID() == q.getQuestionID()).collect(Collectors.toList());
+            Answers correct = answers.stream().filter(Answers::isCorrect).findFirst().orElse(null);
+            String ansText = correct != null ? correct.getContent() : "(正解なし)";
+            docAns.add(new Paragraph(idx + ". " + ansText));
+            idx++;
+        }
+        docAns.close();
     }
 }
